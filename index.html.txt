@@ -1,0 +1,90 @@
+import { useState, useEffect } from "react";
+import Papa from "papaparse";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
+
+const spreadsheetUrl =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTVDnw-8NR-zuZAQR_0BsUMP2i2xUbTJUhCNMDSYlt5NvEjEMlQ_kY6vDOEVFKuVNr8u4gea2hGu0ag/pub?gid=0&single=true&output=csv";
+
+export default function GraduationApp() {
+  const [page, setPage] = useState("welcome");
+  const [data, setData] = useState([]);
+  const [nisn, setNisn] = useState("");
+  const [student, setStudent] = useState(null);
+
+  useEffect(() => {
+    fetch(spreadsheetUrl)
+      .then((response) => response.text())
+      .then((csv) => {
+        Papa.parse(csv, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            setData(results.data);
+          },
+        });
+      });
+  }, []);
+
+  const handleSearch = () => {
+    const result = data.find((row) => row.NISN === nisn);
+    setStudent(result || null);
+  };
+
+  return (
+    <div className="min-h-screen bg-green-100 text-gray-800 p-4">
+      <div className="max-w-2xl mx-auto text-center">
+        <img
+          src="https://cdn.kemenag.go.id/storage/archives/logo-kemenag-png-1png.png"
+          alt="Logo Kemenag"
+          className="h-20 mx-auto mb-4"
+        />
+        <h1 className="text-3xl font-bold mb-2">Madrasah Tsanawiyah Negeri 2 Parigi</h1>
+
+        {page === "welcome" && (
+          <div className="space-y-4">
+            <p className="text-lg italic">
+              "Teruslah belajar, karena ilmu adalah cahaya dalam kegelapan."
+            </p>
+            <p className="font-semibold">Saefudin, S.Pd</p>
+            <Button className="mt-4 bg-green-600 hover:bg-green-700" onClick={() => setPage("check")}>Cek Kelulusan</Button>
+          </div>
+        )}
+
+        {page === "check" && (
+          <div className="mt-8 space-y-4">
+            <Input
+              type="text"
+              placeholder="Masukkan NISN"
+              value={nisn}
+              onChange={(e) => setNisn(e.target.value)}
+              className="text-center"
+            />
+            <Button className="bg-green-600 hover:bg-green-700" onClick={handleSearch}>Cari</Button>
+
+            {student && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`rounded-xl p-4 mt-6 text-white shadow-lg ${
+                  student.Status === "LULUS" ? "bg-green-500" : "bg-red-500"
+                }`}
+              >
+                <h2 className="text-2xl font-bold mb-2">{student.Nama}</h2>
+                <p><strong>Kelas:</strong> {student.Kelas}</p>
+                <p><strong>TTL:</strong> {student.TTL}</p>
+                <p className="mt-2 text-xl font-semibold">Status: {student.Status}</p>
+              </motion.div>
+            )}
+
+            {student === null && nisn && (
+              <p className="text-red-600">Data tidak ditemukan. Periksa kembali NISN Anda.</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
