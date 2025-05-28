@@ -1,0 +1,1 @@
+# kelulusan25-mtsn2parigi
